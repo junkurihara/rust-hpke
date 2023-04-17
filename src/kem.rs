@@ -2,6 +2,8 @@
 
 use crate::{Deserializable, HpkeError, Serializable};
 
+use core::fmt::Debug;
+
 use generic_array::{ArrayLength, GenericArray};
 use rand_core::{CryptoRng, RngCore};
 use zeroize::Zeroize;
@@ -18,6 +20,9 @@ pub trait Kem: Sized {
     /// `Kem::gen_keypair` or `Kem::derive_keypair`
     #[cfg(feature = "serde_impls")]
     type PublicKey: Clone
+        + Debug
+        + PartialEq
+        + Eq
         + Serializable
         + Deserializable
         + SerdeSerialize
@@ -25,12 +30,14 @@ pub trait Kem: Sized {
     /// The key exchange's public key type. If you want to generate a keypair, see
     /// `Kem::gen_keypair` or `Kem::derive_keypair`
     #[cfg(not(feature = "serde_impls"))]
-    type PublicKey: Clone + Serializable + Deserializable;
+    type PublicKey: Clone + Debug + PartialEq + Eq + Serializable + Deserializable;
 
     /// The key exchange's private key type. If you want to generate a keypair, see
     /// `Kem::gen_keypair` or `Kem::derive_keypair`
     #[cfg(feature = "serde_impls")]
     type PrivateKey: Clone
+        + PartialEq
+        + Eq
         + Serializable
         + Deserializable
         + SerdeSerialize
@@ -39,7 +46,10 @@ pub trait Kem: Sized {
     /// The key exchange's private key type. If you want to generate a keypair, see
     /// `Kem::gen_keypair` or `Kem::derive_keypair`
     #[cfg(not(feature = "serde_impls"))]
-    type PrivateKey: Clone + Serializable + Deserializable;
+    type PrivateKey: Clone + PartialEq + Eq + Serializable + Deserializable;
+
+    /// Computes the public key of a given private key
+    fn sk_to_pk(sk: &Self::PrivateKey) -> Self::PublicKey;
 
     /// The encapsulated key for this KEM. This is used by the recipient to derive the shared
     /// secret.
@@ -219,7 +229,7 @@ mod tests {
         };
     }
 
-    #[cfg(feature = "x25519-dalek")]
+    #[cfg(feature = "x25519")]
     mod x25519_tests {
         use super::*;
 
@@ -233,5 +243,13 @@ mod tests {
 
         test_encap_correctness!(test_encap_correctness_p256, crate::kem::DhP256HkdfSha256);
         test_encapped_serialize!(test_encapped_serialize_p256, crate::kem::DhP256HkdfSha256);
+    }
+
+    #[cfg(feature = "p384")]
+    mod p384_tests {
+        use super::*;
+
+        test_encap_correctness!(test_encap_correctness_p384, crate::kem::DhP384HkdfSha384);
+        test_encapped_serialize!(test_encapped_serialize_p384, crate::kem::DhP384HkdfSha384);
     }
 }
