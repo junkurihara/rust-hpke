@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## Pending
+
+* Added `Serializable::write_exact` so serialization requires less stack space
+
+## [0.11.0] - 2023-10-11
 
 ### Removals
 
@@ -13,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changes
 
 * Updated `x25519-dalek` to 2.0
+* Updated `subtle` to 2.5
 
 ## [0.10.0] - 2022-10-01
 
