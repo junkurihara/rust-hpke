@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Pending
 
 * Added `Serializable::write_exact` so serialization requires less stack space
+* Removed all impls of `serde::{Serialize, Deserailize}` from crate
+* Added support for the P-521 curve
 
 ## [0.11.0] - 2023-10-11
 

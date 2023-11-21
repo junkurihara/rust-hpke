@@ -101,7 +101,8 @@ pub(crate) use alloc::vec::Vec;
     feature = "std",
     feature = "x25519",
     feature = "p256",
-    feature = "p384"
+    feature = "p384",
+    feature = "p521"
 ))]
 mod kat_tests;
 
@@ -125,9 +126,6 @@ pub mod kem;
 mod op_mode;
 mod setup;
 mod single_shot;
-
-#[cfg(feature = "serde_impls")]
-mod serde_impls;
 
 #[doc(inline)]
 pub use kem::Kem;
