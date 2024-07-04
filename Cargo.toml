@@ -4,7 +4,7 @@ repository = "https://github.com/rozbb/rust-hpke"
 documentation = "https://docs.rs/rust-hpke"
 description = "An implementation of the HPKE hybrid encryption standard (RFC 9180) in pure Rust"
 readme = "README.md"
-version = "0.11.0"
+version = "0.12.0"
 authors = ["Michael Rosenberg <michael@mrosenberg.pub>"]
 edition = "2021"
 license = "MIT/Apache-2.0"
@@ -28,20 +28,32 @@ std = []
 [dependencies]
 aead = "0.5"
 aes-gcm = "0.10"
-byteorder = { version = "1.5", default-features = false }
 chacha20poly1305 = "0.10"
 generic-array = { version = "0.14", default-features = false }
 digest = "0.10"
 hkdf = "0.12"
 hmac = "0.12"
 rand_core = { version = "0.6", default-features = false }
-p256 = { version = "0.13", default-features = false, features = ["arithmetic", "ecdh"], optional = true}
-p384 = { version = "0.13", default-features = false, features = ["arithmetic", "ecdh"], optional = true}
-p521 = { version = "0.13", default-features = false, features = ["arithmetic", "ecdh"], optional = true}
+p256 = { version = "0.13", default-features = false, features = [
+  "arithmetic",
+  "ecdh",
+], optional = true }
+p384 = { version = "0.13", default-features = false, features = [
+  "arithmetic",
+  "ecdh",
+], optional = true }
+p521 = { version = "0.13", default-features = false, features = [
+  "arithmetic",
+  "ecdh",
+], optional = true }
 sha2 = { version = "0.10", default-features = false }
-subtle = { version = "2.5", default-features = false }
-x25519-dalek = { version = "2", default-features = false, features = ["static_secrets"], optional = true }
-zeroize = { version = "1", default-features = false, features = ["zeroize_derive"] }
+subtle = { version = "2.6", default-features = false }
+x25519-dalek = { version = "2", default-features = false, features = [
+  "static_secrets",
+], optional = true }
+zeroize = { version = "1", default-features = false, features = [
+  "zeroize_derive",
+] }
 
 [dev-dependencies]
 criterion = { version = "0.4", features = ["html_reports"] }
@@ -49,7 +61,10 @@ hex = "0.4"
 hex-literal = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-rand = { version = "0.8", default-features = false, features = ["getrandom", "std_rng"] }
+rand = { version = "0.8", default-features = false, features = [
+  "getrandom",
+  "std_rng",
+] }
 
 [[example]]
 name = "client_server"
