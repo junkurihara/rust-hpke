@@ -1,6 +1,6 @@
 use crate::{
     dhkex::{DhError, DhKeyExchange},
-    kdf::{labeled_extract, Kdf as KdfTrait, LabeledExpand},
+    kdf::Kdf as KdfTrait,
     util::{enforce_equal_len, enforce_outbuf_len, KemSuiteId},
     Deserializable, HpkeError, Serializable,
 };
@@ -21,8 +21,8 @@ pub struct PrivateKey(x25519_dalek::StaticSecret);
 
 impl ConstantTimeEq for PrivateKey {
     fn ct_eq(&self, other: &Self) -> Choice {
-        // We can use to_bytes because StaticSecret is only ever constructed from a clamped scalar
-        self.0.to_bytes().ct_eq(&other.0.to_bytes())
+        // We can use as_bytes because StaticSecret is only ever constructed from a clamped scalar
+        self.0.as_bytes().ct_eq(other.0.as_bytes())
     }
 }
 
@@ -157,15 +157,8 @@ impl DhKeyExchange for X25519 {
     /// key, i.e., 256.
     #[doc(hidden)]
     fn derive_keypair<Kdf: KdfTrait>(suite_id: &KemSuiteId, ikm: &[u8]) -> (PrivateKey, PublicKey) {
-        // Write the label into a byte buffer and extract from the IKM
-        let (_, hkdf_ctx) = labeled_extract::<Kdf>(&[], suite_id, b"dkp_prk", ikm);
-        // The buffer we hold the candidate scalar bytes in. This is the size of a private key.
-        let mut buf = [0u8; 32];
-        hkdf_ctx
-            .labeled_expand(suite_id, b"sk", &[], &mut buf)
-            .unwrap();
-
-        let sk = x25519_dalek::StaticSecret::from(buf);
+        let sk_bytes = Kdf::derive_x25519_sk_eph_bytes(suite_id, ikm);
+        let sk = x25519_dalek::StaticSecret::from(sk_bytes);
         let pk = x25519_dalek::PublicKey::from(&sk);
 
         (PrivateKey(sk), PublicKey(pk))
@@ -181,8 +174,6 @@ mod tests {
     use hybrid_array::typenum::Unsigned;
     use rand::Rng;
 
-    /// Tests that an serialize-deserialize round-trip ends up at the same pubkey
-    #[test]
     fn test_pubkey_serialize_correctness() {
         type Kex = X25519;
 
@@ -213,7 +204,7 @@ mod tests {
         let mut csprng = rand::rng();
 
         // Make a random keypair and serialize it
-        let (sk, pk) = dhkex_gen_keypair::<Kex, _>(&mut csprng);
+        let (sk, pk) = dhkex_gen_keypair::<Kex>(&mut csprng);
         let (sk_bytes, pk_bytes) = (sk.to_bytes(), pk.to_bytes());
 
         // Now deserialize those bytes
