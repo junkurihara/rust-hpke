@@ -23,7 +23,7 @@ use hpke::{
     Serializable,
 };
 
-use rand::{CryptoRng, RngCore};
+use rand::{CryptoRng, Rng};
 
 trait AgileAeadCtxS {
     fn seal_inout_detached(
@@ -306,7 +306,7 @@ macro_rules! do_gen_keypair {
     }};
 }
 
-fn agile_gen_keypair<R: CryptoRng + RngCore>(kem_alg: KemAlg, csprng: &mut R) -> AgileKeypair {
+fn agile_gen_keypair<R: CryptoRng + Rng>(kem_alg: KemAlg, csprng: &mut R) -> AgileKeypair {
     match kem_alg {
         KemAlg::X25519HkdfSha256 => do_gen_keypair!(X25519HkdfSha256, kem_alg, csprng),
         KemAlg::DhP256HkdfSha256 => do_gen_keypair!(DhP256HkdfSha256, kem_alg, csprng),
@@ -525,7 +525,7 @@ where
     A: 'static + Aead,
     Kdf: 'static + KdfTrait,
     Kem: 'static + KemTrait,
-    R: CryptoRng + RngCore,
+    R: CryptoRng + Rng,
 {
     let kem_alg = mode.kem_alg;
     let mode = mode.clone().try_lift::<Kem, Kdf>()?;
@@ -540,7 +540,7 @@ where
     Ok((encapped_key, Box::new(aead_ctx)))
 }
 
-fn agile_setup_sender<R: CryptoRng + RngCore>(
+fn agile_setup_sender<R: CryptoRng + Rng>(
     aead_alg: AeadAlg,
     kdf_alg: KdfAlg,
     kem_alg: KemAlg,

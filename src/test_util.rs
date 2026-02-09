@@ -10,7 +10,7 @@ use crate::{
 
 use aead::inout::InOutBuf;
 use hybrid_array::Array;
-use rand::{CryptoRng, Rng, RngCore};
+use rand::{CryptoRng, Rng, RngExt};
 
 /// Returns a random 32-byte buffer
 pub(crate) fn gen_rand_buf() -> [u8; 32] {
@@ -21,7 +21,7 @@ pub(crate) fn gen_rand_buf() -> [u8; 32] {
 }
 
 /// Generates a keypair without the need of a KEM
-pub(crate) fn dhkex_gen_keypair<Kex: DhKeyExchange, R: CryptoRng + RngCore>(
+pub(crate) fn dhkex_gen_keypair<Kex: DhKeyExchange, R: CryptoRng + Rng>(
     csprng: &mut R,
 ) -> (Kex::PrivateKey, Kex::PublicKey) {
     // Make some keying material that's the size of a private key

@@ -179,7 +179,7 @@ mod tests {
         test_util::dhkex_gen_keypair,
     };
     use hybrid_array::typenum::Unsigned;
-    use rand::RngCore;
+    use rand::Rng;
 
     /// Tests that an serialize-deserialize round-trip ends up at the same pubkey
     #[test]

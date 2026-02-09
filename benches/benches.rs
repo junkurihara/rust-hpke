@@ -7,7 +7,7 @@ use hpke::{
 };
 
 use criterion::{criterion_main, Criterion};
-use rand::RngCore;
+use rand::Rng;
 use std::time::Instant;
 
 // Length of AAD for all seal/open benchmarks
