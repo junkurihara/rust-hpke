@@ -3,12 +3,16 @@ use crate::{
     kdf::Kdf as KdfTrait,
     kem::Kem as KemTrait,
     op_mode::{OpModeR, OpModeS},
-    setup::{setup_receiver, setup_sender},
+    setup::{setup_receiver, setup_sender_with_rng},
     HpkeError,
 };
 
 use aead::inout::InOutBuf;
+#[cfg(feature = "getrandom")]
+use getrandom::SysRng;
 use rand_core::CryptoRng;
+#[cfg(feature = "getrandom")]
+use rand_core::UnwrapErr;
 
 // RFC 9180 §6.1
 // def SealAuthPSK(pkR, info, aad, pt, psk, psk_id, skS):
@@ -16,7 +20,7 @@ use rand_core::CryptoRng;
 //   ct = ctx.Seal(aad, pt)
 //   return enc, ct
 
-/// Does a [`setup_sender`] and
+/// Does a [`crate::setup_sender`] and
 /// [`AeadCtxS::seal_inout_detached`](crate::aead::AeadCtxS::seal_inout_detached) in one shot. That
 /// is, it does a key encapsulation to the specified recipient and encrypts the provided plaintext
 /// in place.
@@ -26,7 +30,44 @@ use rand_core::CryptoRng;
 /// Returns `Ok((encapped_key, auth_tag))` on success. If an error happened during key
 /// encapsulation, returns `Err(HpkeError::EncapError)`. If an error happened during encryption,
 /// returns `Err(HpkeError::SealError)`. In this case, the contents of `plaintext` is undefined.
+///
+/// Panics
+/// ======
+/// Panics if `getrandom::SysRng` fails to generate random bytes.
+#[cfg(feature = "getrandom")]
 pub fn single_shot_seal_inout_detached<A, Kdf, Kem>(
+    mode: &OpModeS<Kem>,
+    pk_recip: &Kem::PublicKey,
+    info: &[u8],
+    buffer: InOutBuf<'_, '_, u8>,
+    aad: &[u8],
+) -> Result<(Kem::EncappedKey, AeadTag<A>), HpkeError>
+where
+    A: Aead,
+    Kdf: KdfTrait,
+    Kem: KemTrait,
+{
+    single_shot_seal_inout_detached_with_rng::<A, Kdf, Kem>(
+        mode,
+        pk_recip,
+        info,
+        buffer,
+        aad,
+        &mut UnwrapErr(SysRng),
+    )
+}
+
+/// Does a [`setup_sender_with_rng`] and
+/// [`AeadCtxS::seal_inout_detached`](crate::aead::AeadCtxS::seal_inout_detached) in one shot. That
+/// is, it does a key encapsulation to the specified recipient and encrypts the provided plaintext
+/// in place.
+///
+/// Return Value
+/// ============
+/// Returns `Ok((encapped_key, auth_tag))` on success. If an error happened during key
+/// encapsulation, returns `Err(HpkeError::EncapError)`. If an error happened during encryption,
+/// returns `Err(HpkeError::SealError)`. In this case, the contents of `plaintext` is undefined.
+pub fn single_shot_seal_inout_detached_with_rng<A, Kdf, Kem>(
     mode: &OpModeS<Kem>,
     pk_recip: &Kem::PublicKey,
     info: &[u8],
@@ -40,15 +81,53 @@ where
     Kem: KemTrait,
 {
     // Encap a key
-    let (encapped_key, mut aead_ctx) = setup_sender::<A, Kdf, Kem>(mode, pk_recip, info, csprng)?;
+    let (encapped_key, mut aead_ctx) =
+        setup_sender_with_rng::<A, Kdf, Kem>(mode, pk_recip, info, csprng)?;
     // Encrypt
     let tag = aead_ctx.seal_inout_detached(buffer, aad)?;
 
     Ok((encapped_key, tag))
 }
 
-/// Does a [`setup_sender`] and [`AeadCtxS::seal`](crate::aead::AeadCtxS::seal) in one shot. That
-/// is, it does a key encapsulation to the specified recipient and encrypts the provided plaintext.
+/// Does a [`crate::setup_sender`] and [`AeadCtxS::seal`](crate::aead::AeadCtxS::seal) in one shot.
+/// That is, it does a key encapsulation to the specified recipient and encrypts the provided
+/// plaintext.
+///
+/// Return Value
+/// ============
+/// Returns `Ok((encapped_key, ciphertext))` on success. If an error happened during key
+/// encapsulation, returns `Err(HpkeError::EncapError)`. If an error happened during encryption,
+/// returns `Err(HpkeError::SealError)`.
+///
+/// Panics
+/// ======
+/// Panics if `getrandom::SysRng` fails to generate random bytes.
+#[cfg(all(feature = "alloc", feature = "getrandom"))]
+pub fn single_shot_seal<A, Kdf, Kem>(
+    mode: &OpModeS<Kem>,
+    pk_recip: &Kem::PublicKey,
+    info: &[u8],
+    plaintext: &[u8],
+    aad: &[u8],
+) -> Result<(Kem::EncappedKey, crate::Vec<u8>), HpkeError>
+where
+    A: Aead,
+    Kdf: KdfTrait,
+    Kem: KemTrait,
+{
+    single_shot_seal_with_rng::<A, Kdf, Kem>(
+        mode,
+        pk_recip,
+        info,
+        plaintext,
+        aad,
+        &mut UnwrapErr(SysRng),
+    )
+}
+
+/// Does a [`crate::setup_sender`] and [`AeadCtxS::seal`](crate::aead::AeadCtxS::seal) in one shot.
+/// That is, it does a key encapsulation to the specified recipient and encrypts the provided
+/// plaintext.
 ///
 /// Return Value
 /// ============
@@ -56,7 +135,7 @@ where
 /// encapsulation, returns `Err(HpkeError::EncapError)`. If an error happened during encryption,
 /// returns `Err(HpkeError::SealError)`.
 #[cfg(feature = "alloc")]
-pub fn single_shot_seal<A, Kdf, Kem>(
+pub fn single_shot_seal_with_rng<A, Kdf, Kem>(
     mode: &OpModeS<Kem>,
     pk_recip: &Kem::PublicKey,
     info: &[u8],
@@ -70,7 +149,8 @@ where
     Kem: KemTrait,
 {
     // Encap a key
-    let (encapped_key, mut aead_ctx) = setup_sender::<A, Kdf, Kem>(mode, pk_recip, info, csprng)?;
+    let (encapped_key, mut aead_ctx) =
+        setup_sender_with_rng::<A, Kdf, Kem>(mode, pk_recip, info, csprng)?;
     // Encrypt
     let ciphertext = aead_ctx.seal(plaintext, aad)?;
 
@@ -146,11 +226,13 @@ where
 mod test {
     use super::*;
     use crate::{
-        aead::ChaCha20Poly1305,
         kem::Kem as KemTrait,
         op_mode::{OpModeR, OpModeS, PskBundle},
         test_util::gen_rand_buf,
     };
+
+    #[cfg(feature = "chacha")]
+    use crate::aead::ChaCha20Poly1305;
 
     macro_rules! test_single_shot_correctness {
         ($test_name:ident, $aead:ty, $kdf:ty, $kem:ty, $use_auth:expr) => {
@@ -175,8 +257,8 @@ mod test {
                 let psk_bundle = PskBundle::new(&psk, &psk_id).unwrap();
 
                 // Generate the sender's and receiver's long-term keypairs
-                let (sk_sender_id, pk_sender_id) = Kem::gen_keypair(&mut csprng);
-                let (sk_recip, pk_recip) = Kem::gen_keypair(&mut csprng);
+                let (sk_sender_id, pk_sender_id) = Kem::gen_keypair_with_rng(&mut csprng);
+                let (sk_recip, pk_recip) = Kem::gen_keypair_with_rng(&mut csprng);
 
                 // Construct the sender's and receiver's operation modes
                 let sender_mode = if $use_auth {
@@ -194,7 +276,7 @@ mod test {
                 };
 
                 // Single-shot encrypt
-                let (encapped_key, ciphertext) = single_shot_seal::<A, Kdf, Kem>(
+                let (encapped_key, ciphertext) = single_shot_seal_with_rng::<A, Kdf, Kem>(
                     &sender_mode,
                     &pk_recip,
                     info,
@@ -222,7 +304,7 @@ mod test {
         };
     }
 
-    #[cfg(feature = "x25519")]
+    #[cfg(all(feature = "x25519", feature = "chacha"))]
     test_single_shot_correctness!(
         test_single_shot_correctness_x25519,
         ChaCha20Poly1305,
@@ -231,7 +313,7 @@ mod test {
         true
     );
 
-    #[cfg(feature = "p256")]
+    #[cfg(all(feature = "p256", feature = "chacha"))]
     test_single_shot_correctness!(
         test_single_shot_correctness_p256,
         ChaCha20Poly1305,
@@ -240,7 +322,7 @@ mod test {
         true
     );
 
-    #[cfg(feature = "p384")]
+    #[cfg(all(feature = "p384", feature = "chacha"))]
     test_single_shot_correctness!(
         test_single_shot_correctness_p384,
         ChaCha20Poly1305,
@@ -249,7 +331,7 @@ mod test {
         true
     );
 
-    #[cfg(feature = "p521")]
+    #[cfg(all(feature = "p521", feature = "chacha"))]
     test_single_shot_correctness!(
         test_single_shot_correctness_p521,
         ChaCha20Poly1305,

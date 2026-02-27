@@ -31,29 +31,41 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           override: true
 
-      - name: Run cargo test with just X25519 enabled
+      - name: Run cargo test with X25519 and ChaCha20-Poly1305
         env:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: -D warnings -A dead_code -A unused_imports
-        run: cargo test --no-default-features --features="x25519"
+        run: cargo test --no-default-features --features="x25519,chacha"
 
-      - name: Run cargo test with just P256 enabled
+      - name: Run cargo test with P256 and ChaCha20-Poly1305
         env:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: -D warnings -A dead_code -A unused_imports
-        run: cargo test --no-default-features --features="p256"
+        run: cargo test --no-default-features --features="p256,chacha"
 
-      - name: Run cargo test with just P384 enabled
+      - name: Run cargo test with P384 and ChaCha20-Poly1305
         env:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: -D warnings -A dead_code -A unused_imports
-        run: cargo test --no-default-features --features="p384"
+        run: cargo test --no-default-features --features="p384,chacha"
 
-      - name: Run cargo test with just P521 enabled
+      - name: Run cargo test with P521 and ChaCha20-Poly1305
         env:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: -D warnings -A dead_code -A unused_imports
-        run: cargo test --no-default-features --features="p521"
+        run: cargo test --no-default-features --features="p521,chacha"
+
+      - name: Run cargo test with X25519 and AES-GCM
+        env:
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: -D warnings -A dead_code -A unused_imports
+        run: cargo test --no-default-features --features="x25519,aes"
+
+      - name: Run cargo test with P256 and AES-GCM
+        env:
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: -D warnings -A dead_code -A unused_imports
+        run: cargo test --no-default-features --features="p256,aes"
 
       - name: Run cargo test with all features enabled
         env:
@@ -94,7 +106,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
       - run: cargo doc --all-features --no-deps
         env:
-          RUSTDOCFLAGS: "--cfg docsrs"
+          RUSTDOCFLAGS: "--cfg docsrs -D warnings"
 
   msrv:
     name: rust-version is MSRV
@@ -126,8 +138,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: thumbv6m-none-eabi
-      - name: Build with all features but kat
-        run: cargo build --target thumbv6m-none-eabi --features "x25519,p256,p384,p521,xwing"
+      - name: Build with all features but kat and getrandom
+        run: cargo build --target thumbv6m-none-eabi --no-default-features --features "x25519,p256,p384,p521,xwing,aes,chacha"
       - name: Build with no default features
         run: cargo build --target thumbv6m-none-eabi --no-default-features
 
