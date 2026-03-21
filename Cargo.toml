@@ -43,9 +43,6 @@ chacha20poly1305 = { version = "=0.11.0-rc.3", default-features = false, optiona
 getrandom = { version = "0.4", default-features = false, features = ["sys_rng"], optional = true }
 hybrid-array = "0.4"
 hkdf = { version = "=0.13.0-rc.5", default-features = false }
-# `hkdf` 0.13.0-rc.5 currently breaks with `digest` 0.11.2 via `hmac` 0.13.0-rc.5,
-# so pin the last known-good release until RustCrypto publishes a compatible update.
-digest = { version = "=0.11.1", default-features = false }
 rand_core = { version = "0.10.0", default-features = false }
 p256 = { version = "0.13", default-features = false, features = [
   "arithmetic",
@@ -60,7 +57,7 @@ p521 = { version = "0.13", default-features = false, features = [
   "ecdh",
 ], optional = true }
 sha2 = { version = "=0.11.0-rc.5", default-features = false }
-sha3 = { version = "=0.11.0-rc.8", default-features = false }
+sha3 = { version = "=0.11.0-rc.9", default-features = false }
 subtle = { version = "2.6", default-features = false }
 x25519-dalek = { version = "2", default-features = false, features = [
   "static_secrets",
