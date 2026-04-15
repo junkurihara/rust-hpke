@@ -43,7 +43,7 @@ chacha20poly1305 = { version = "=0.11.0-rc.3", default-features = false, optiona
 getrandom = { version = "0.4", default-features = false, features = ["sys_rng"], optional = true }
 hybrid-array = "0.4"
 hkdf = { version = "0.13.0", default-features = false }
-rand_core = { version = "0.10.0", default-features = false }
+rand_core = { version = "0.10.1", default-features = false }
 p256 = { version = "0.13", default-features = false, features = [
   "arithmetic",
   "ecdh",
@@ -73,7 +73,7 @@ hex = "0.4"
 hex-literal = "1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-rand = { version = "0.10.0", default-features = false, features = [
+rand = { version = "0.10.1", default-features = false, features = [
   "thread_rng",
 ] }
 
