@@ -12,7 +12,10 @@ use hybrid_array::typenum::{Prod, Sum, Unsigned, U1024, U3, U32, U64};
 use rand_core::CryptoRng;
 use sha3::Shake256;
 use subtle::{Choice, ConstantTimeEq};
-use x_wing::{kem::{Decapsulate, Decapsulator}, KeyExport, TryKeyInit};
+use x_wing::{
+    kem::{Decapsulate, Decapsulator},
+    KeyExport, TryKeyInit,
+};
 use zeroize::Zeroize;
 
 // Type-level size constants for X-Wing
